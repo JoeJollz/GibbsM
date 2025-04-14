@@ -8,10 +8,46 @@ import pandas as pd
 num_species_in = int(input("How many input species are present? (e.g., 2 for ethanol and water): "))
 
 moles_of_species_in = {}
+C = 0
+H = 0
+O = 0
 for _ in range(num_species_in):
-    species_name = str(input(f"Input the chemical formula for species {_}: " ))
-    moles = float(input(f"How many moles of species {_} is present? " ))
+    if _ == 0:
+        print('Please input using the following format: ')
+        print('e.g. Ethanol -> c1h5o1')
+        print('e.g. Methane -> C1H4')
+        print('e.g. Hydrogen -> H2o1')
+    
+    species_name = str(input(f"Input the chemical formula for species {_+1}: " ))
+    moles = float(input(f"How many moles of species {_+1} is present? " ))
     moles_of_species_in[species_name] = moles
+    
+    for Z in range(len(species_name)-1):
+        if species_name[Z].isdigit():
+            continue
+        
+        elif species_name[Z] == 'c' or 'C':
+            add_c = float(species_name[Z+1])
+        
+        elif species_name[Z] == 'h' or 'H':
+            add_h = float(species_name[Z+1])
+        elif species_name[Z] == 'o' or 'O':
+            add_o = float(species_name[Z+1])
+        
+        else:
+            print("Chemical formula has invalid input. Exciting programme.")
+            exit()
+            
+    
+    add_c = float(species_name[1])*moles
+    add_h = float(species_name[3])*moles
+    add_o = float(species_name[5])*moles
+    
+    C += add_c
+    H += add_h
+    O += add_o
+    
+    
     
 
 def delGf(T,P):
