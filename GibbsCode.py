@@ -5,6 +5,15 @@ from scipy.optimize import root
 import matplotlib.pyplot as plt
 import pandas as pd
 
+num_species_in = int(input("How many input species are present? (e.g., 2 for ethanol and water): "))
+
+moles_of_species_in = {}
+for _ in range(num_species_in):
+    species_name = str(input(f"Input the chemical formula for species {_}: " ))
+    moles = float(input(f"How many moles of species {_} is present? " ))
+    moles_of_species_in[species_name] = moles
+    
+
 def delGf(T,P):
     coeff = np.array([[8.05532035898967E-14,  -4.54258761039957E-10, 9.74514532917984E-07, -9.81657565169609E-04,  +5.11923575045929E-01, -3.24372890991510E+02], # H2O 1 bar
                       [-3.41544901192528E-18, 5.94902651736064E-14,  -3.78177322557548E-10, 1.78077091726027E-06, - 3.96194591894066E-03,  - 3.93364345454672E+02],  # CO2 1 bar
@@ -12,7 +21,7 @@ def delGf(T,P):
                       [                    0,                    0,                     0,                     0,                      0,                      0 ],  # H2
                       [2.26110992549836E-18, -2.49784774284562E-14, -2.96507088667142E-11, +2.59877014328724E-06, -9.30966445312590E-02,  -1.09676600595313E+02],    # CO
                       [                    0,                    0,                     0,                     0,                      0,                      0 ], # C
-                    #  [-1.11515065129641E-17, +2.11447930436933E-13, -1.52766168149359E-09, +5.78567116482972E-06,  - 6.19869714803181E-02, +2.27175463481463E+02], # C2H2
+                      [-1.11515065129641E-17, +2.11447930436933E-13, -1.52766168149359E-09, +5.78567116482972E-06,  - 6.19869714803181E-02, +2.27175463481463E+02], # C2H2
                       ])
     
     T_poly = np.array([T**5, T**4, T**3, T**2, T**1, 1]) 
@@ -30,7 +39,7 @@ def Gibbs(n, T, p):
     
     for i in range(n.shape[0]): # protect from negative log
         if n[i] <= 0:
-            n[i] = 1e-20
+            n[i] = 1e-49
             
     
     R  = 8.314 # universal gas constant in J / mol K
@@ -50,7 +59,7 @@ def element_balance(n, e0):
                   [0, 2, 0],  #H2 
                   [1, 0, 1],  #CO 
                   [1, 0, 0],  #C
-                #  [2, 2, 0],  #C2H2
+                  [2, 2, 0],  #C2H2
                   ])
     
     resid = np.dot(np.transpose(A), n ) - e0
@@ -58,15 +67,15 @@ def element_balance(n, e0):
     return resid
 
 e0 = np.array([2, 16, 6]) # C, H, O
-n0 = np.ones(6)
-n0[-1] = 1e-14
+n0 = np.ones(7)
+n0[-1] = 0.5
 #n0[-1] = 1e-10
 ps = np.array([1.01325])
 Ts = np.linspace(500, 1400, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
 bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
-bnds = [(0, np.inf)]*6
+bnds = [(0, np.inf)]*7
 result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0])) # what is n0?? and what dimensions is this giving.
 h2 = []
 co2 = []
@@ -91,7 +100,7 @@ for i in range(ps.shape[0]):
         ch4.append(y[2]/np.sum(y))
         co.append(y[4]/np.sum(y))
         c.append(y[5]/np.sum(y))
-        #c2h2.append(y[6]/np.sum(y))
+        c2h2.append(y[6]/np.sum(y))
         
         s_o_f.append(res.success)
             
@@ -113,7 +122,7 @@ plt.plot(Ts, co2, label = 'CO2')
 plt.plot(Ts, co, label = 'CO')
 plt.plot(Ts, ch4, label = 'CH4')
 plt.plot(Ts, c, label = 'C')
-#plt.plot(Ts, c2h2, label = 'C2H2')
+plt.plot(Ts, c2h2, label = 'C2H2')
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (K)')
 plt.legend()
