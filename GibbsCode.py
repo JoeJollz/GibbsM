@@ -12,6 +12,7 @@ C = 0
 H = 0
 O = 0
 total_moles = 0
+accessing_C = 0
 for _ in range(num_species_in):
     add_c = 0
     add_h = 0
@@ -27,25 +28,28 @@ for _ in range(num_species_in):
     moles_of_species_in[species_name] = moles
     
     
-    for Z in range(len(species_name)-1):
+    for Z in range(len(species_name)):
 
         if species_name[Z].isdigit():
             continue
         
-        elif species_name[Z] == 'c' or 'C':
-            if Z!= len(species_name):
+        elif species_name[Z] == 'c' or species_name[Z] == 'C':
+            print('in c')
+            if Z!= len(species_name)-1:
                 add_c = float(species_name[Z+1])*moles
             else:
                 add_c = moles
         
-        elif species_name[Z] == 'h' or 'H':
-            if Z!= len(species_name):
+        elif species_name[Z] == 'h' or species_name[Z] == 'H':
+            print('in h')
+            if Z!= len(species_name)-1:
                 add_h = float(species_name[Z+1])*moles
             else:
                 add_h = moles
             
-        elif species_name[Z] == 'o' or 'O':
-            if Z!= len(species_name):
+        elif species_name[Z] == 'o' or species_name[Z] == 'O':
+            print(' in o')
+            if Z!= len(species_name)-1:
                 add_o = float(species_name[Z+1])*moles
             else:
                 add_o = moles
@@ -57,6 +61,9 @@ for _ in range(num_species_in):
     C += add_c
     H += add_h
     O += add_o
+print('Oxygen: ', O)
+print('Carbon: ', C)
+print('Hydrogen: ', H)
     
     
     
@@ -151,8 +158,8 @@ for i in range(ps.shape[0]):
         
         s_o_f.append(res.success)
             
-        print(result_y[i, j], '@: ', ps[i], 'Bar ,', Ts[j] , 'K')
-        print('Success or Fail: ', res.success)
+       # print(result_y[i, j], '@: ', ps[i], 'Bar ,', Ts[j] , 'K')
+       # print('Success or Fail: ', res.success)
             
 
 test = delGf(500, 1)
