@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" test spyder connection.  
+""" test VS connection.  
 Created on Sun Mar 30 18:36:11 2025
 
 @author: jrjol
