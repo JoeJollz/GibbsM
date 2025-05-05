@@ -28,16 +28,27 @@ for _ in range(num_species_in):
     
     
     for Z in range(len(species_name)-1):
+
         if species_name[Z].isdigit():
             continue
         
         elif species_name[Z] == 'c' or 'C':
-            add_c = float(species_name[Z+1])*moles
+            if Z!= len(species_name):
+                add_c = float(species_name[Z+1])*moles
+            else:
+                add_c = moles
         
         elif species_name[Z] == 'h' or 'H':
-            add_h = float(species_name[Z+1])*moles
+            if Z!= len(species_name):
+                add_h = float(species_name[Z+1])*moles
+            else:
+                add_h = moles
+            
         elif species_name[Z] == 'o' or 'O':
-            add_o = float(species_name[Z+1])*moles
+            if Z!= len(species_name):
+                add_o = float(species_name[Z+1])*moles
+            else:
+                add_o = moles
         
         else:
             print("Chemical formula has invalid input. Exciting programme.")
