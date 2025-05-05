@@ -18,7 +18,7 @@ for _ in range(num_species_in):
     add_o = 0
     if _ == 0:
         print('Please input using the following format: ')
-        print('e.g. Ethanol -> c1h5o1')
+        print('e.g. Ethanol -> c2h6o1')
         print('e.g. Methane -> C1H4')
         print('e.g. Hydrogen -> H2o1')
     
