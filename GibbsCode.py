@@ -91,6 +91,14 @@ def delGf(T,P):
     
     return coeff_T
 
+
+def phi_vect(n, T, P):
+    # Using cubic equation of state - 
+    
+    
+    
+    return phis
+
 def Gibbs(n, T, p):
     # function currently takes the fugacity coefficient as 1
     
