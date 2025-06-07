@@ -1,3 +1,10 @@
+'''
+Function for calculating fugacity coefficients needs to be implemented, and then called
+within the def Gibbs() function, just prior to the total_gibbs calculation. Additionally, 
+provide option for user to select 'ideal gas' hence fug coeffs = 1, or 'real gas' to allow
+for fug coeffs to be calculated based on data and EoSs. 
+'''
+
 
 import numpy as np
 from scipy.optimize import minimize, basinhopping
