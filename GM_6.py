@@ -66,6 +66,7 @@ n0 = np.ones(6)
 ps = np.array([1.01325])
 Ts = np.linspace(400, 1400, 200)
 
+
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
 bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
 
@@ -106,16 +107,18 @@ P_1bar = -192.593
 P_10bar = -173.468
 
 Calc_P_10bar = P_1bar + 0.008314 * 1000 * np.log(10 / 1)
-Tc = Ts-273.15
-plt.plot(Tc, h2, label = 'H2')
-plt.plot(Tc, h2o, label = 'H2O')
-plt.plot(Tc, co2, label = 'CO2')
+
+
+Tc = Ts -273.15
+plt.plot(Tc, h2, label = 'H$_2$')
+#plt.plot(Tc, h2o, label = 'H2O')
+plt.plot(Tc, co2, label = 'CO$_2$')
 plt.plot(Tc, co, label = 'CO')
-plt.plot(Tc, ch4, label = 'CH4')
-plt.plot(Tc, c, label = 'C')
+plt.plot(Tc, ch4, label = 'CH$_4$')
+#plt.plot(Tc, c, label = 'C')
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
-plt.title('1CH4:3CO2')
+plt.title('2CH$_4$:1CO$_2$')
 plt.legend()
 plt.show()
 
