@@ -15,3 +15,6 @@ $ \delta G_{f,i}^{O}(T)$ gibbs formation data is a function of Temperature (K) a
 2 constraints are applied to the solver, including 1. Elemental balance (equality constraint) 2. All $n_i >0$ (non negativity inequality constraint).
 
 Example of results plotting is shown below. Where the species plotted are CO, $CO_2$, $CH_4$, H$_2$, H$_2$O, and C, each as a function of Temperature ($T \in [573, 1173 ]K$) and mole flow ratio between $H_2O:CH_3OH \in [0.5, 5]$. 
+
+
+![CO Product Mole Fraction](IMAGES/CO_Gibbs_mini.jpg)
