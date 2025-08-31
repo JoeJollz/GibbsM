@@ -10,7 +10,7 @@ $$
 \text{minimise } \sum_{i}^{N} \Delta G_{f,i}^{O} + R T n_i \ln \frac{p n_i}{p_0 \sum+{\text{gas}} n_i}
 $$
 
-$ \delta G_{f,i}^{O}(T)$ gibbs formation data is a function of Temperature (K) and pressure of 1atm. This information was sourced for each species from the NIST-JANAF thermochemical tables. 
+$\delta G_{f,i}^{O}(T)$ gibbs formation data is a function of Temperature (K) and pressure of 1atm. This information was sourced for each species from the NIST-JANAF thermochemical tables. 
 
 2 constraints are applied to the solver, including 1. Elemental balance (equality constraint) 2. All $n_i >0$ (non negativity inequality constraint).
 
