@@ -35,7 +35,7 @@ def Gibbs(n, T, p):
     
     for i in range(n.shape[0]): # protect from negative log
         if n[i] <= 0:
-            n[i] = 1e-20
+            n[i] = 1e-20  # still problematic, leading ln(n_i) --> -inf, causing instability
             
     
     R  = 8.314 # universal gas constant in J / mol K
@@ -61,10 +61,10 @@ def element_balance(n, e0):
     
     return resid
 
-e0 = np.array([2, 16, 6]) # C, H, O
+e0 = np.array([4, 4, 6]) # C, H, O
 n0 = np.ones(6)
 ps = np.array([1.01325])
-Ts = np.linspace(500, 1400, 200)
+Ts = np.linspace(400, 1400, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
 bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
@@ -106,15 +106,16 @@ P_1bar = -192.593
 P_10bar = -173.468
 
 Calc_P_10bar = P_1bar + 0.008314 * 1000 * np.log(10 / 1)
-
-plt.plot(Ts, h2, label = 'H2')
-plt.plot(Ts, h2o, label = 'H2O')
-plt.plot(Ts, co2, label = 'CO2')
-plt.plot(Ts, co, label = 'CO')
-plt.plot(Ts, ch4, label = 'CH4')
-plt.plot(Ts, c, label = 'C')
+Tc = Ts-273.15
+plt.plot(Tc, h2, label = 'H2')
+plt.plot(Tc, h2o, label = 'H2O')
+plt.plot(Tc, co2, label = 'CO2')
+plt.plot(Tc, co, label = 'CO')
+plt.plot(Tc, ch4, label = 'CH4')
+plt.plot(Tc, c, label = 'C')
 plt.ylabel('Mole Fraction')
-plt.xlabel('Temperature (K)')
+plt.xlabel('Temperature (°C)')
+plt.title('1CH4:3CO2')
 plt.legend()
 plt.show()
 
