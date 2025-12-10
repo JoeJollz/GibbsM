@@ -61,11 +61,7 @@ def element_balance(n, e0):
     
     return resid
 
-<<<<<<< HEAD
 e0 = np.array([4, 4, 6]) # C, H, O
-=======
-e0 = np.array([4, 2, 8]) # C, H, O
->>>>>>> 778a1d6 (New file GM_6_X made)
 n0 = np.ones(6)
 ps = np.array([1.01325])
 Ts = np.linspace(400, 1400, 200)
