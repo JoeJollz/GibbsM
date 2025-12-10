@@ -1,15 +1,71 @@
 # -*- coding: utf-8 -*-
-""" test VS connection.  
-Created on Sun Mar 30 18:36:11 2025
-
-@author: jrjol
 """
+Created on Wed Dec 10 09:57:33 2025
+
+GM_6_X is the same as GM_6, but now, we have calculated the conversion for methanol
+for a specified mole flow rate, as a function of time. 
+X_eq,MeOH = f(T)
+where the conversion of methanol X, is defined as C based conversion:
+    X = (N_C + N_CO2 + N_CO + N_CH4)/ N_MeOH
+
+"""
+
 
 import numpy as np
 from scipy.optimize import minimize
 from scipy.optimize import root
 import matplotlib.pyplot as plt
 import pandas as pd
+
+
+def Abs_G(T, specie):
+    
+    R = 8.31446 # J/mol.K
+    
+    if specie == "CH4" and T > 1000:
+        row = 0
+    
+    elif specie == "CH4" and T <= 1000:
+        row = 1
+        
+    elif specie == "H2" and T > 1000:
+        row = 2
+        
+    elif specie == "H2" and T <= 1000:
+        row = 3
+        
+    elif specie == "C" and T > 1000:
+        row = 4
+    
+    elif specie == "C" and T <= 1000:
+        row = 5
+    
+        
+    coeff = np.array([
+                      [1.91178600E+00, 9.60267960E-03, -3.38387841E-06, 5.38797240E-10, -3.19306807E-14, -1.00992136E+04, 8.48241861E+00],  # CH4 at T=[1000,6000]K
+                      [5.14825732E+00, -1.37002410E-02, 4.93749414E-05, -4.91952339E-08, 1.70097299E-11, -1.02453222E+04, -4.63322726E+00],  # CH4 at T=[200,1000]K
+                      [0.29328305E+01, 0.8265980E-03, -0.14640057E-06, 0.15409851E-10, -0.68879615E-15, -0.81305582E+3, -0.10243164E+1],  # H2, T=[1000,6000]K
+                      [0.23443029E+01, 0.79804248E-02, -0.19477917E-04, 0.20156967E-07, -0.73760289E-11, -0.91792413E+03, 0.68300218E+00],  # H2 T=[200,1000]K
+                      [ 0.14556924E+01, 0.17170638E-02,-0.69758410E-06, 0.13528316E-09,-0.96764905E-14, -0.69512804E+03, -0.85256842E+01],  # C at T=[1000,6000]K
+                      [-0.31087207E+00, 0.44035369E-02, 0.19039412E-05, -0.63854697E-08, 0.29896425E-11, -0.10865079E+03, 0.11138295E+01],  # C at T=[200,1000]K
+                      ])
+    
+    a = coeff[row]
+    ## 9 constant polynomial ##
+    # G_T_RT = (-a[0]/(2*T**(2))   (2*a[1]*(1-np.log(T)))/T  +  a[2]*(1-np.log(T)) 
+    #           - (a[3]*T))/2 - (a[4]*T**2)/6  - (a[5]*T**3)/12  -  (a[6]*T**4) /20  
+    #           + a[7]/T  -a[8])
+    ## 7 constant polynoial ##
+    G_T_RT =( a[0]*(1-np.log(T)) - (a[1]*T)/2 - (a[2]*T**2)/6  -  (a[3]*T**3)/12
+             - (a[4]*T**4)/20 + a[5]/T - a[6])
+        
+        
+    G_T = G_T_RT*R*T # absolute gibbs energy for specie / element of interest.
+        
+    
+    return G_T
+
+
 
 def delGf(T,P):
     coeff = np.array([[8.05532035898967E-14,  -4.54258761039957E-10, 9.74514532917984E-07, -9.81657565169609E-04,  +5.11923575045929E-01, -3.24372890991510E+02], # H2O 1 bar
@@ -26,6 +82,21 @@ def delGf(T,P):
     
     return coeff_T
 
+store_new_gf = []
+store_old_gf =[]
+error = []
+T_s = []
+
+for T in range(300,3000):
+    gf_ch4_new = Abs_G(T, "CH4") - (Abs_G(T, "C") + 2*Abs_G(T, "H2"))
+    gf_ch4_old = delGf(T,1)[2]
+    e = gf_ch4_new - gf_ch4_old
+    error.append(e)
+    T_s.append(T)
+    
+plt.plot(T_s,error)
+plt.show()
+
 def Gibbs(n, T, p):
     # function currently takes the fugacity coefficient as 1
     
@@ -35,7 +106,7 @@ def Gibbs(n, T, p):
     
     for i in range(n.shape[0]): # protect from negative log
         if n[i] <= 0:
-            n[i] = 1e-20  # still problematic, leading ln(n_i) --> -inf, causing instability
+            n[i] = 1e-20
             
     
     R  = 8.314 # universal gas constant in J / mol K
@@ -61,15 +132,11 @@ def element_balance(n, e0):
     
     return resid
 
-<<<<<<< HEAD
-e0 = np.array([4, 4, 6]) # C, H, O
-=======
-e0 = np.array([4, 2, 8]) # C, H, O
->>>>>>> 778a1d6 (New file GM_6_X made)
+e0 = np.array([1, 5.92, 2.46]) # C, H, O
+N_MeOH = 1 # moles of MeOH in
 n0 = np.ones(6)
 ps = np.array([1.01325])
-Ts = np.linspace(400, 1400, 200)
-
+Ts = np.linspace(473.15, 1173.15, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
 bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
@@ -82,6 +149,7 @@ co = []
 c = []
 h2o  = []
 s_o_f = []
+X_MeOH = []
 for i in range(ps.shape[0]):
     for j in range(Ts.shape[0]):
         # if np.sum(x0) !=1:
@@ -97,6 +165,7 @@ for i in range(ps.shape[0]):
         ch4.append(y[2]/np.sum(y))
         co.append(y[4]/np.sum(y))
         c.append(y[5]/np.sum(y))
+        X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
         
         s_o_f.append(res.success)
             
@@ -111,8 +180,6 @@ P_1bar = -192.593
 P_10bar = -173.468
 
 Calc_P_10bar = P_1bar + 0.008314 * 1000 * np.log(10 / 1)
-
-
 Tc = Ts -273.15
 plt.plot(Tc, h2, label = 'H$_2$')
 plt.plot(Tc, h2o, label = 'H$_2$O')
