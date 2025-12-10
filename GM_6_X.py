@@ -8,6 +8,11 @@ X_eq,MeOH = f(T)
 where the conversion of methanol X, is defined as C based conversion:
     X = (N_C + N_CO2 + N_CO + N_CH4)/ N_MeOH
 
+KEY REFERENCE FOR THERMOCHEMICAL DATA, IN PARTICULAR ABSOLUTE GIBBS ENERGIES.
+                Third Millennium Ideal Gas and Condensed Phase 
+                Thermochemical Database for Combustion 
+                with Updates from Active Thermochemical Tables
+
 """
 
 
@@ -40,6 +45,17 @@ def Abs_G(T, specie):
     elif specie == "C" and T <= 1000:
         row = 5
     
+    elif specie == "CH3OHg" and T > 1000:
+        row = 6
+    
+    elif specie == "CH3OHg" and T <= 1000:
+        row = 7
+    
+    elif specie == "O2" and T > 1000:
+        row = 8
+        
+    elif specie == "O2" and T <= 1000:
+        row = 9
         
     coeff = np.array([
                       [1.91178600E+00, 9.60267960E-03, -3.38387841E-06, 5.38797240E-10, -3.19306807E-14, -1.00992136E+04, 8.48241861E+00],  # CH4 at T=[1000,6000]K
@@ -48,6 +64,10 @@ def Abs_G(T, specie):
                       [0.23443029E+01, 0.79804248E-02, -0.19477917E-04, 0.20156967E-07, -0.73760289E-11, -0.91792413E+03, 0.68300218E+00],  # H2 T=[200,1000]K
                       [ 0.14556924E+01, 0.17170638E-02,-0.69758410E-06, 0.13528316E-09,-0.96764905E-14, -0.69512804E+03, -0.85256842E+01],  # C at T=[1000,6000]K
                       [-0.31087207E+00, 0.44035369E-02, 0.19039412E-05, -0.63854697E-08, 0.29896425E-11, -0.10865079E+03, 0.11138295E+01],  # C at T=[200,1000]K
+                      [3.52726795E+00, 1.03178783E-02, -3.62892944E-06, 5.77448016E-10, -3.42182632E-14, -2.60028834E+04, 5.16758693E+00], # CH3OH gas at T = [1000,6000]K
+                      [5.65851051E+00, -1.62983419E-02, 6.91938156E-05, -7.58372926E-08, 2.80427550E-11, -2.56119736E+04, -8.97330508E-01], # CH3OH gas at T = [200,1000]K
+                      [ 3.66096083E+00, 6.56365523E-04, -1.41149485E-07, 2.05797658E-11, -1.29913248E-15, -1.21597725E+03, 3.41536184E+00], # O2 at T=[1000,6000]K
+                      [3.78245636E+00, -2.99673415E-03, 9.84730200E-06, -9.68129508E-09, 3.24372836E-12, -1.06394356E+03, 3.65767573E+00], # O2 at T=[200,1000]K
                       ])
     
     a = coeff[row]
@@ -84,17 +104,36 @@ def delGf(T,P):
 
 store_new_gf = []
 store_old_gf =[]
+store_ch3oh = []
 error = []
 T_s = []
 
-for T in range(300,3000):
+for T in range(298,3000):
     gf_ch4_new = Abs_G(T, "CH4") - (Abs_G(T, "C") + 2*Abs_G(T, "H2"))
+    gf_ch3oh_new = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5*Abs_G(T, "O2"))
     gf_ch4_old = delGf(T,1)[2]
     e = gf_ch4_new - gf_ch4_old
     error.append(e)
+    store_new_gf.append(gf_ch4_new)
+    store_old_gf.append(gf_ch4_old)
+    store_ch3oh.append(gf_ch3oh_new)
     T_s.append(T)
     
 plt.plot(T_s,error)
+plt.title('Gibbs_f error for CH4. NIST JANAF VS ARGONNE')
+plt.xlabel('Temperature (K)')
+plt.ylabel('Error (J/mol)')
+plt.show()
+
+plt.plot(T_s, store_new_gf , label='New model')
+plt.plot(T_s, store_old_gf , label ='Old model')
+plt.legend()
+plt.show()
+
+plt.plot(T_s, store_ch3oh)
+plt.title('Gibbs E of Form CH3OH')
+plt.xlabel('Temperature (K)')
+plt.ylabel('Gibbs form (J/mol)')
 plt.show()
 
 def Gibbs(n, T, p):
