@@ -57,6 +57,12 @@ def Abs_G(T, specie):
     elif specie == "O2" and T <= 1000:
         row = 9
         
+    elif specie == "CH3OHl" and T > 1000:
+        row = 10
+    
+    elif specie == "CH3OHl" and T <= 1000:
+        row = 11
+        
     coeff = np.array([
                       [1.91178600E+00, 9.60267960E-03, -3.38387841E-06, 5.38797240E-10, -3.19306807E-14, -1.00992136E+04, 8.48241861E+00],  # CH4 at T=[1000,6000]K
                       [5.14825732E+00, -1.37002410E-02, 4.93749414E-05, -4.91952339E-08, 1.70097299E-11, -1.02453222E+04, -4.63322726E+00],  # CH4 at T=[200,1000]K
@@ -68,6 +74,8 @@ def Abs_G(T, specie):
                       [5.65851051E+00, -1.62983419E-02, 6.91938156E-05, -7.58372926E-08, 2.80427550E-11, -2.56119736E+04, -8.97330508E-01], # CH3OH gas at T = [200,1000]K
                       [ 3.66096083E+00, 6.56365523E-04, -1.41149485E-07, 2.05797658E-11, -1.29913248E-15, -1.21597725E+03, 3.41536184E+00], # O2 at T=[1000,6000]K
                       [3.78245636E+00, -2.99673415E-03, 9.84730200E-06, -9.68129508E-09, 3.24372836E-12, -1.06394356E+03, 3.65767573E+00], # O2 at T=[200,1000]K
+                      [0.00000000E+00, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00 ], # CH3OH liquid at T = [1000,6000]K
+                      [1.21754995E+01, -4.19673868E-02, 1.42400437E-04,-1.60999972E-07, 2.14794684E-10, -3.15401115E+04, -4.68827360E+01], # CH3OH liquid at T = [200,1000]K
                       ])
     
     a = coeff[row]
@@ -100,6 +108,13 @@ def delGf(T,P):
     
     coeff_T = np.matmul(T_poly, np.transpose(coeff)) * 1000 # J/mol
     
+    #methanol gibbs form#
+    if T >338: #ch3oh is a liquid
+        gf_ch3oh = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
+    else:
+        gf_ch3oh = Abs_G(T, "CH3OHl") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
+    coeff_T = np.append(coeff_T, gf_ch3oh)
+    
     return coeff_T
 
 store_new_gf = []
@@ -112,6 +127,7 @@ for T in range(298,3000):
     gf_ch4_new = Abs_G(T, "CH4") - (Abs_G(T, "C") + 2*Abs_G(T, "H2"))
     gf_ch3oh_new = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5*Abs_G(T, "O2"))
     gf_ch4_old = delGf(T,1)[2]
+    gf_ch4_old_list = delGf(T,1)
     e = gf_ch4_new - gf_ch4_old
     error.append(e)
     store_new_gf.append(gf_ch4_new)
@@ -165,6 +181,7 @@ def element_balance(n, e0):
                   [0, 2, 0],  #H2 
                   [1, 0, 1],  #CO 
                   [1, 0, 0],  #C
+                  [1, 4, 1],  #CH3OH
                   ])
     
     resid = np.dot(np.transpose(A), n ) - e0
@@ -173,12 +190,12 @@ def element_balance(n, e0):
 
 e0 = np.array([1, 5.92, 2.46]) # C, H, O
 N_MeOH = 1 # moles of MeOH in
-n0 = np.ones(6)
+n0 = np.ones(7)
 ps = np.array([1.01325])
 Ts = np.linspace(473.15, 1173.15, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
-bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
+bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
 
 result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0])) # what is n0?? and what dimensions is this giving.
 h2 = []
@@ -187,6 +204,7 @@ ch4 = []
 co = []
 c = []
 h2o  = []
+ch3oh = []
 s_o_f = []
 X_MeOH = []
 for i in range(ps.shape[0]):
@@ -204,6 +222,7 @@ for i in range(ps.shape[0]):
         ch4.append(y[2]/np.sum(y))
         co.append(y[4]/np.sum(y))
         c.append(y[5]/np.sum(y))
+        ch3oh.append(y[6]/np.sum(y))
         X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
         
         s_o_f.append(res.success)
@@ -226,6 +245,7 @@ plt.plot(Tc, co2, label = 'CO$_2$')
 plt.plot(Tc, co, label = 'CO')
 plt.plot(Tc, ch4, label = 'CH$_4$')
 plt.plot(Tc, c, label = 'C')
+plt.plot(Tc, ch3oh, label = 'CH$_3$OH')
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
 plt.title('4CO$_2$:1H$_2$')
