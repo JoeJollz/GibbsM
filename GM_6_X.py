@@ -109,7 +109,7 @@ def delGf(T,P):
     coeff_T = np.matmul(T_poly, np.transpose(coeff)) * 1000 # J/mol
     
     #methanol gibbs form#
-    if T >338: #ch3oh is a liquid
+    if T >338: #ch3oh is vapor
         gf_ch3oh = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
     else:
         gf_ch3oh = Abs_G(T, "CH3OHl") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
@@ -157,8 +157,18 @@ def Gibbs(n, T, p):
     
     gibbs_form = delGf(T,p)
     
-    n_gas = np.delete(n, 5) # index for removing solid carbon. 
     
+    gas_indicies = list(range(len(n)))
+    
+    gas_indicies.remove(5)
+    if T<338:
+        gas_indicies.remove(6)
+    n_gas = n[gas_indicies]
+    
+    # n_gas = np.delete(n, 5) # index for removing solid carbon.
+    # if T<338: # CH3OH is a liquid, hence remove.
+    #     n_gas = np.delete(n,6)
+
     for i in range(n.shape[0]): # protect from negative log
         if n[i] <= 0:
             n[i] = 1e-20
@@ -167,7 +177,7 @@ def Gibbs(n, T, p):
     R  = 8.314 # universal gas constant in J / mol K
     p0 = 3 # standard pressure in bar
     
-    total_gibbs = np.dot(n, gibbs_form) + R*T*np.sum(n*np.log((p*n)/(p0*np.sum(n_gas))))
+    total_gibbs = np.dot(n, gibbs_form) + R*T*np.sum(n_gas*np.log((p*n_gas)/(p0*np.sum(n_gas))))  # changed so no longer calculating gas phase entropy for non gas terms.
     return total_gibbs
 
 # n0 is the element input based on moles of species and their corresponding elemental stoichometry
