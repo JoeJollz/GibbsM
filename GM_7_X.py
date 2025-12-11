@@ -191,9 +191,27 @@ def element_balance(n, e0):
     
     return resid
 
+def retry(y, res):
+    
+    retry_c = 0
+    max_retries = 5
+    
+    while not res.success and retry_c < max_retries:
+      #  if retry_c ==0:        
+            #n0_perturbed = y
+            res = minimize(Gibbs, y, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons)
+            print(f'Retry {retry_c+1}: ', res.success)
+            retry_c +=1
+            y = y * (1 + 1e-2 * np.random.randn(len(y)))
+
+    
+    return res
+    
+    
+
 e0 = np.array([1, 5.92, 2.46]) # C, H, O
 N_MeOH = 1 # moles of MeOH in
-n0 = np.ones(7)
+y = n0 = np.ones(7)
 ps = np.array([1.01325])
 Ts = np.linspace(473.15, 1173.15, 200)
 
@@ -210,14 +228,36 @@ h2o  = []
 ch3oh = []
 s_o_f = []
 X_MeOH = []
+f = 0
+s = 0
 for i in range(ps.shape[0]):
     for j in range(Ts.shape[0]):
         # if np.sum(x0) !=1:
         #     print('please check initial guess for the mole fraction compoistion')
         
         # else:
-        res = minimize(Gibbs, n0, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons)
-        y = res.x
+        res_o = res = minimize(Gibbs, n0, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons, options={'ftol':1e-12, 'maxiter':500})
+        print('--------------------------------------------------------------')
+        print('Resdiual element balance Pre: ', element_balance(y, e0))
+        if not res.success:
+            res = retry(y, res)
+        
+        if np.linalg.norm(element_balance(res_o.x, e0), ord =1) <= np.linalg.norm(element_balance(res.x, e0),1): # check which equalit constraint is greater breached. 
+            y = res_o.x
+            if not res_o.success:
+                f +=1
+            else: 
+                s+=1
+            s_o_f.append(res_o.success)
+            
+        else:
+            y = res.x
+            if not res.success:
+                f +=1
+            else: 
+                s+=1
+            s_o_f.append(res.success)
+        
         result_y[i, j] = y/ np.sum(y)
         h2.append(y[3]/np.sum(y))
         h2o.append(y[0]/np.sum(y))
@@ -229,9 +269,14 @@ for i in range(ps.shape[0]):
         X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
         
         s_o_f.append(res.success)
+        
+        
+        
             
         print(result_y[i, j], '@: ', ps[i], 'Bar ,', Ts[j] , 'K')
         print('Success or Fail: ', res.success)
+        print('Resdiual element balance Post: ', element_balance(y, e0))
+        print('--------------------------------------------------------------')
             
 
 test = delGf(500, 1)
@@ -254,4 +299,30 @@ plt.xlabel('Temperature (°C)')
 plt.title('4CO$_2$:1H$_2$')
 plt.legend()
 plt.show()
+
+print('Percentage failed: ', f/(s+f)*100, '%')
+
+plt.plot(Tc, h2, label='H$_2$')
+plt.plot(Tc, h2o, label='H$_2$O')
+plt.plot(Tc, co2, label='CO$_2$')
+plt.plot(Tc, co, label='CO')
+plt.plot(Tc, ch4, label='CH$_4$')
+plt.plot(Tc, c, label='C')
+plt.plot(Tc, ch3oh, label='CH$_3$OH')
+
+plt.ylabel('Mole Fraction')
+plt.xlabel('Temperature (°C)')
+plt.title('4CO$_2$:1H$_2$')
+
+# === ADD THIS SECTION ===
+for T, success in zip(Tc, s_o_f):
+    if not success:        # if solver failed
+        plt.axvline(T, color='red', alpha=0.3, linewidth=1)
+
+# OPTIONAL: add legend entry for failure markers
+plt.axvline(Tc[0], color='red', alpha=0.3, linewidth=1, label='Failed convergence')
+
+plt.legend()
+plt.show()
+
 
