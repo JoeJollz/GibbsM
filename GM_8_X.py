@@ -51,6 +51,25 @@ def Abs_G(T, specie):
     
     elif specie == "CH3OHl" and T <= 1000:
         row = 11
+    
+    elif specie == "CO" and T > 1000:
+        row = 12
+    
+    elif specie == "CO" and T <= 1000:
+        row = 13
+        
+    elif specie == "CO2" and T > 1000:
+        row = 14
+    
+    elif specie == "CO2" and T <= 1000:
+        row = 15
+    
+    elif specie == "H2O" and T > 1000:
+        row = 16
+    
+    elif specie == "H2O" and T <= 1000:
+        row = 17
+    
         
     coeff = np.array([
                       [1.91178600E+00, 9.60267960E-03, -3.38387841E-06, 5.38797240E-10, -3.19306807E-14, -1.00992136E+04, 8.48241861E+00],  # CH4 at T=[1000,6000]K
@@ -90,70 +109,19 @@ def Abs_G(T, specie):
 
 def Gabs_molar(T):
     
+    species_of_interest = ["H2O", "CO2", "CH4", "H2", "CO", "C", "CH3OHg"]
+    gibbs_form = np.zeros(len(species_of_interest))
+    
+    for idx, name in enumerate(species_of_interest):
+        gibbs_form[idx] = Abs_G(T, name)
+    
     return gibbs_form
-
-# def delGf(T,P):
-#     coeff = np.array([[8.05532035898967E-14,  -4.54258761039957E-10, 9.74514532917984E-07, -9.81657565169609E-04,  +5.11923575045929E-01, -3.24372890991510E+02], # H2O 1 bar
-#                       [-3.41544901192528E-18, 5.94902651736064E-14,  -3.78177322557548E-10, 1.78077091726027E-06, - 3.96194591894066E-03,  - 3.93364345454672E+02],  # CO2 1 bar
-#                       [-1.19480733517904E-16, 2.05212901316876E-12, -1.30585665160995E-08, +3.77285316359721E-05, +6.34019284941587E-02,  -7.14155077385076E+01],   # CH4
-#                       [                    0,                    0,                     0,                     0,                      0,                      0 ],  # H2
-#                       [2.26110992549836E-18, -2.49784774284562E-14, -2.96507088667142E-11, +2.59877014328724E-06, -9.30966445312590E-02,  -1.09676600595313E+02],    # CO
-#                       [                    0,                    0,                     0,                     0,                      0,                      0 ], # C
-#                       ])
-    
-#     T_poly = np.array([T**5, T**4, T**3, T**2, T**1, 1]) 
-    
-#     coeff_T = np.matmul(T_poly, np.transpose(coeff)) * 1000 # J/mol
-    
-#     #methanol gibbs form#
-#     if T >338: #ch3oh is vapor
-#         gf_ch3oh = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
-#     else:
-#         gf_ch3oh = Abs_G(T, "CH3OHl") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
-#     coeff_T = np.append(coeff_T, gf_ch3oh)
-    
-#     return coeff_T
-
-store_new_gf = []
-store_old_gf =[]
-store_ch3oh = []
-error = []
-T_s = []
-
-for T in range(298,3000):
-    gf_ch4_new = Abs_G(T, "CH4") - (Abs_G(T, "C") + 2*Abs_G(T, "H2"))
-    gf_ch3oh_new = Abs_G(T, "CH3OHg") - (Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5*Abs_G(T, "O2"))
-   # gf_ch4_old = delGf(T,1)[2]
-   # gf_ch4_old_list = delGf(T,1)
-  #  e = gf_ch4_new - gf_ch4_old
-  #  error.append(e)
-    store_new_gf.append(gf_ch4_new)
-  #  store_old_gf.append(gf_ch4_old)
-    store_ch3oh.append(gf_ch3oh_new)
-    T_s.append(T)
-    
-plt.plot(T_s,error)
-plt.title('Gibbs_f error for CH4. NIST JANAF VS ARGONNE')
-plt.xlabel('Temperature (K)')
-plt.ylabel('Error (J/mol)')
-plt.show()
-
-plt.plot(T_s, store_new_gf , label='New model')
-plt.plot(T_s, store_old_gf , label ='Old model')
-plt.legend()
-plt.show()
-
-plt.plot(T_s, store_ch3oh)
-plt.title('Gibbs E of Form CH3OH')
-plt.xlabel('Temperature (K)')
-plt.ylabel('Gibbs form (J/mol)')
-plt.show()
 
 def Gibbs(n, T, p):
     # function currently takes the fugacity coefficient as 1
     
    # gibbs_form = delGf(T,p)
-   gibbs_form = Gabs_molar(T)
+    gibbs_form = Gabs_molar(T)
     
     
     gas_indicies = list(range(len(n)))
@@ -163,9 +131,6 @@ def Gibbs(n, T, p):
         gas_indicies.remove(6)
     n_gas = n[gas_indicies]
     
-    # n_gas = np.delete(n, 5) # index for removing solid carbon.
-    # if T<338: # CH3OH is a liquid, hence remove.
-    #     n_gas = np.delete(n,6)
 
     for i in range(n.shape[0]): # protect from negative log
         if n[i] <= 0:
@@ -173,9 +138,9 @@ def Gibbs(n, T, p):
             
     
     R  = 8.314 # universal gas constant in J / mol K
-    p0 = 3 # standard pressure in bar
+    p0 = 1 # standard pressure in bar
     
-    total_gibbs = np.dot(n, gibbs_form) + R*T*np.sum(n_gas*np.log((p*n_gas)/(p0*np.sum(n_gas))))  # changed so no longer calculating gas phase entropy for non gas terms.
+    total_gibbs = np.dot(n, gibbs_form) + R*T*np.sum(n*np.log((p*n)/(p0*np.sum(n_gas))))  # changed so no longer calculating gas phase entropy for non gas terms.
     return total_gibbs
 
 # n0 is the element input based on moles of species and their corresponding elemental stoichometry
@@ -216,12 +181,12 @@ def retry(y, res):
 
 e0 = np.array([1, 5.92, 2.46]) # C, H, O
 N_MeOH = 1 # moles of MeOH in
-y = n0 = np.ones(7)
+y = n0 = np.array([1, 1, 1, 1, 1, 1, 5])
 ps = np.array([1.01325])
 Ts = np.linspace(473.15, 1173.15, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
-bnds = ((0, np.inf), (0, np.inf), (0, np.inf), (0, np.inf), (0,np.inf), (0,np.inf), (0,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
+bnds = ((1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10,np.inf), (1e-10,np.inf), (1e-10,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
 
 result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0])) # what is n0?? and what dimensions is this giving.
 h2 = []
@@ -329,4 +294,25 @@ plt.axvline(Tc[0], color='red', alpha=0.3, linewidth=1, label='Failed convergenc
 
 plt.legend()
 plt.show()
+
+
+ch4_gibbs = []
+ch3oh_gibbs = []
+co2_gibbs = []
+h2o_gibbs = []
+for T in Ts:
+    gibbs_form = Gabs_molar(T)
+    
+    ch4_gibbs.append(gibbs_form[2])
+    ch3oh_gibbs.append(gibbs_form[6])
+    h2o_gibbs.append(gibbs_form[0])
+    co2_gibbs.append(gibbs_form[1])
+    
+plt.plot(Ts, ch4_gibbs, label='CH4 Gibbs')
+plt.plot(Ts, ch3oh_gibbs, label = 'CH3OH Gibbs')
+plt.plot(Ts, h2o_gibbs, label = 'H2O Gibbs')
+plt.plot(Ts, co2_gibbs, label = 'CO2 Gibbs')
+plt.legend()
+plt.show()
+    
 
