@@ -3,6 +3,14 @@
 Created on Fri Dec 12 16:19:03 2025
 
 @author: jrjol
+
+Seems to be converging well at all points.
+
+TODO:
+    - Check the formula for the ratio of success v fail convergences.
+    - Methanol product mole fraction is still negligable. consider gibbs E of 
+    carbon. Issue could be due to consideration of C, yet CH4 is still moderate.
+    
 """
 
 import numpy as np
