@@ -7,6 +7,8 @@ Created on Sun Dec 14 15:26:57 2025
 Now, just calculating the methanol conversion for a single reaction. 
 Methanol decomp to start.
 
+CH3OH <> 2H2 + CO
+
 """
 
 
@@ -98,11 +100,7 @@ def Abs_G(T, specie):
                       ])
     
     a = coeff[row]
-    ## 9 constant polynomial ##
-    # G_T_RT = (-a[0]/(2*T**(2))   (2*a[1]*(1-np.log(T)))/T  +  a[2]*(1-np.log(T)) 
-    #           - (a[3]*T))/2 - (a[4]*T**2)/6  - (a[5]*T**3)/12  -  (a[6]*T**4) /20  
-    #           + a[7]/T  -a[8])
-    ## 7 constant polynoial ##
+
     G_T_RT =( a[0]*(1-np.log(T)) - (a[1]*T)/2 - (a[2]*T**2)/6  -  (a[3]*T**3)/12
              - (a[4]*T**4)/20 + a[5]/T - a[6])
         
@@ -114,7 +112,7 @@ def Abs_G(T, specie):
 
 def Gabs_molar(T):
     
-    species_of_interest = ["H2O", "CO2", "CH4", "H2", "CO", "C", "CH3OHg"] 
+    #species_of_interest = ["H2", "CO", "CH3OHg"]
     gibbs_form = np.zeros(len(species_of_interest))
     
     for idx, name in enumerate(species_of_interest):
@@ -122,18 +120,54 @@ def Gabs_molar(T):
     
     return gibbs_form
 
+def G_form(T):
+    global species_of_interest
+    
+    G = np.zeros(len(species_of_interest))
+    
+    
+    for idx, name in enumerate(species_of_interest):      
+        _ = Abs_G(T, name)
+        
+        if name == 'CH3OHg':
+            _ -= (1*Abs_G(T, "C") + 2*Abs_G(T, "H2") + 0.5 * Abs_G(T, "O2"))
+        elif name == "CO":
+            _ -= (1*Abs_G(T, "C") + 0.5 * Abs_G(T, "O2"))
+        elif name == "H2":
+            _ -= (1*Abs_G(T, "H2"))
+        G[idx] = _
+        
+    return G
+
+def deltaG_rxn(T):
+    return (
+        Abs_G(T,"CO")
+        + 2*Abs_G(T,"H2")
+        - Abs_G(T,"CH3OHg")
+    )
+
+
+species_of_interest = ["H2", "CO", "CH3OHg"]
+store = []
+deltG_rxns = []
+t_ = []
+for T in range(400,1000):
+    s = G_form(T)
+    store.append(s)
+    deltG_rxns.append(deltaG_rxn(T))
+    t_.append(T)
+plt.plot(t_, deltG_rxns)
+plt.show()
+
 def Gibbs(n, T, p):
+    global species_of_interest
     # function currently takes the fugacity coefficient as 1
     
-   # gibbs_form = delGf(T,p)
-    gibbs_form = Gabs_molar(T)
-    
-    
+    gibbs_form = G_form(T)
+   
     gas_indicies = list(range(len(n)))
-    
-    gas_indicies.remove(5) # removing C
     if T<338:
-        gas_indicies.remove(6)
+        gas_indicies.remove(2)
     n_gas = n[gas_indicies]
     
 
@@ -148,17 +182,16 @@ def Gibbs(n, T, p):
     total_gibbs = np.dot(n, gibbs_form) + R*T*np.sum(n*np.log((p*n)/(p0*np.sum(n_gas))))  # changed so no longer calculating gas phase entropy for non gas terms.
     return total_gibbs
 
+
+
 # n0 is the element input based on moles of species and their corresponding elemental stoichometry
 def element_balance(n, e0):
     
     # Species-element stoichometry 
     #             #C #H #O
-    A = np.array([[0, 2, 1],  #H2O
-                  [1, 0, 2],  #CO2
-                  [1, 4, 0],  #CH4
+    A = np.array([
                   [0, 2, 0],  #H2 
                   [1, 0, 1],  #CO 
-                  [1, 0, 0],  #C
                   [1, 4, 1],  #CH3OH
                   ])
     
@@ -172,8 +205,6 @@ def retry(y, res):
     max_retries = 5
     
     while not res.success and retry_c < max_retries:
-      #  if retry_c ==0:        
-            #n0_perturbed = y
             res = minimize(Gibbs, y, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons)
             print(f'Retry {retry_c+1}: ', res.success)
             retry_c +=1
@@ -183,18 +214,17 @@ def retry(y, res):
     return res
     
     
-
-e0 = np.array([1, 5.92, 2.46]) # C, H, O
+species_of_interest = ["H2", "CO", "CH3OHg"]
+e0 = np.array([1, 4, 1]) # C, H, O
 N_MeOH = 1 # moles of MeOH in
-y = n0 = np.array([1, 1, 1, 1, 1, 1, 5])
-#y = n0 = np.array([1, 1, 1, 1, 1, 5])
+y = n0 = np.array([1, 1, 1])
 ps = np.array([1.01325])
 Ts = np.linspace(473.15, 1173.15, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
-bnds = ((1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10,np.inf), (1e-10,np.inf), (1e-10, np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
+bnds = ((1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
 
-result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0])) # what is n0?? and what dimensions is this giving.
+result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0]))
 h2 = []
 co2 = []
 ch4 = []
@@ -208,11 +238,9 @@ f = 0
 s = 0
 for i in range(ps.shape[0]):
     for j in range(Ts.shape[0]):
-        # if np.sum(x0) !=1:
-        #     print('please check initial guess for the mole fraction compoistion')
         
         # else:
-        res_o = res = minimize(Gibbs, n0, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons, options={'ftol':1e-12, 'maxiter':500})
+        res_o = res = minimize(Gibbs, y, args = (Ts[j], ps[i]), method = 'SLSQP', bounds = bnds, constraints = cons, options={'ftol':1e-12, 'maxiter':500})
         print('--------------------------------------------------------------')
         print('Resdiual element balance Pre: ', element_balance(y, e0))
         if not res.success:
@@ -236,15 +264,11 @@ for i in range(ps.shape[0]):
             s_o_f.append(res.success)
         
         result_y[i, j] = y/ np.sum(y)
-        h2.append(y[3]/np.sum(y))
-        h2o.append(y[0]/np.sum(y))
-        co2.append(y[1]/np.sum(y))
-        ch4.append(y[2]/np.sum(y))
-        co.append(y[4]/np.sum(y))
-        c.append(y[5]/np.sum(y))
-        ch3oh.append(y[6]/np.sum(y))
-        X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
-        
+        h2.append(y[0]/np.sum(y))
+
+        co.append(y[1]/np.sum(y))
+        ch3oh.append(y[2]/np.sum(y))
+    
         s_o_f.append(res.success)
         
         
@@ -256,40 +280,29 @@ for i in range(ps.shape[0]):
         print('--------------------------------------------------------------')
             
 
-#test = delGf(500, 1)
-
-P_1bar = -192.593
-
-P_10bar = -173.468
-
-Calc_P_10bar = P_1bar + 0.008314 * 1000 * np.log(10 / 1)
 Tc = Ts -273.15
 plt.plot(Tc, h2, label = 'H$_2$')
-plt.plot(Tc, h2o, label = 'H$_2$O')
-plt.plot(Tc, co2, label = 'CO$_2$')
 plt.plot(Tc, co, label = 'CO')
-plt.plot(Tc, ch4, label = 'CH$_4$')
-plt.plot(Tc, c, label = 'C')
 plt.plot(Tc, ch3oh, label = 'CH$_3$OH')
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
-plt.title('1CH$_3$OH:1.5H$_2$O')
+plt.title('CH$_3$OH Decomposition')
 plt.legend()
 plt.show()
 
 print('Percentage failed: ', f/(s+f)*100, '%')
 
 plt.plot(Tc, h2, label='H$_2$')
-plt.plot(Tc, h2o, label='H$_2$O')
-plt.plot(Tc, co2, label='CO$_2$')
+#plt.plot(Tc, h2o, label='H$_2$O')
+#plt.plot(Tc, co2, label='CO$_2$')
 plt.plot(Tc, co, label='CO')
-plt.plot(Tc, ch4, label='CH$_4$')
-plt.plot(Tc, c, label='C')
+#plt.plot(Tc, ch4, label='CH$_4$')
+#plt.plot(Tc, c, label='C')
 plt.plot(Tc, ch3oh, label='CH$_3$OH')
 
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
-plt.title('1CH$_3$OH:1.5H$_2$O')
+plt.title('CH$_3$OH Decomposition')
 
 # === ADD THIS SECTION ===
 for T, success in zip(Tc, s_o_f):
@@ -303,23 +316,23 @@ plt.legend()
 plt.show()
 
 
-ch4_gibbs = []
-ch3oh_gibbs = []
-co2_gibbs = []
-h2o_gibbs = []
-for T in Ts:
-    gibbs_form = Gabs_molar(T)
+# ch4_gibbs = []
+# ch3oh_gibbs = []
+# co2_gibbs = []
+# h2o_gibbs = []
+# for T in Ts:
+#     gibbs_form = Gabs_molar(T)
     
-    ch4_gibbs.append(gibbs_form[2])
-    ch3oh_gibbs.append(gibbs_form[5])
-    h2o_gibbs.append(gibbs_form[0])
-    co2_gibbs.append(gibbs_form[1])
+#     ch4_gibbs.append(gibbs_form[2])
+#     ch3oh_gibbs.append(gibbs_form[5])
+#     h2o_gibbs.append(gibbs_form[0])
+#     co2_gibbs.append(gibbs_form[1])
     
-plt.plot(Ts, ch4_gibbs, label='CH4 Gibbs')
-plt.plot(Ts, ch3oh_gibbs, label = 'CH3OH Gibbs')
-plt.plot(Ts, h2o_gibbs, label = 'H2O Gibbs')
-plt.plot(Ts, co2_gibbs, label = 'CO2 Gibbs')
-plt.legend()
-plt.show()
+# plt.plot(Ts, ch4_gibbs, label='CH4 Gibbs')
+# plt.plot(Ts, ch3oh_gibbs, label = 'CH3OH Gibbs')
+# plt.plot(Ts, h2o_gibbs, label = 'H2O Gibbs')
+# plt.plot(Ts, co2_gibbs, label = 'CO2 Gibbs')
+# plt.legend()
+# plt.show()
     
 

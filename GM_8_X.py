@@ -136,7 +136,7 @@ def Gibbs(n, T, p):
     
     gas_indicies = list(range(len(n)))
     
-    gas_indicies.remove(5) # removing C
+    gas_indicies.remove(5)
     if T<338:
         gas_indicies.remove(6)
     n_gas = n[gas_indicies]
