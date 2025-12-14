@@ -7,10 +7,11 @@ Created on Fri Dec 12 16:19:03 2025
 Seems to be converging well at all points.
 
 TODO:
-    - Check the formula for the ratio of success v fail convergences.
+    - Check the formula for the ratio of success v fail convergences. CHECKED and satisfactory.
     - Methanol product mole fraction is still negligable. consider gibbs E of 
     carbon. Issue could be due to consideration of C, yet CH4 is still moderate.
     
+Temporarily removing carbon from the product species. 
 """
 
 import numpy as np
@@ -117,7 +118,8 @@ def Abs_G(T, specie):
 
 def Gabs_molar(T):
     
-    species_of_interest = ["H2O", "CO2", "CH4", "H2", "CO", "C", "CH3OHg"]
+    # species_of_interest = ["H2O", "CO2", "CH4", "H2", "CO", "C", "CH3OHg"] 
+    species_of_interest = ["H2O", "CO2", "CH4", "H2", "CO", "CH3OHg"] # removing C
     gibbs_form = np.zeros(len(species_of_interest))
     
     for idx, name in enumerate(species_of_interest):
@@ -134,9 +136,9 @@ def Gibbs(n, T, p):
     
     gas_indicies = list(range(len(n)))
     
-    gas_indicies.remove(5)
+    #gas_indicies.remove(5) # removing C
     if T<338:
-        gas_indicies.remove(6)
+        gas_indicies.remove(5)
     n_gas = n[gas_indicies]
     
 
@@ -161,7 +163,7 @@ def element_balance(n, e0):
                   [1, 4, 0],  #CH4
                   [0, 2, 0],  #H2 
                   [1, 0, 1],  #CO 
-                  [1, 0, 0],  #C
+                 # [1, 0, 0],  #C
                   [1, 4, 1],  #CH3OH
                   ])
     
@@ -189,12 +191,13 @@ def retry(y, res):
 
 e0 = np.array([1, 5.92, 2.46]) # C, H, O
 N_MeOH = 1 # moles of MeOH in
-y = n0 = np.array([1, 1, 1, 1, 1, 1, 5])
+#y = n0 = np.array([1, 1, 1, 1, 1, 1, 5])
+y = n0 = np.array([1, 1, 1, 1, 1, 5])
 ps = np.array([1.01325])
 Ts = np.linspace(473.15, 1173.15, 200)
 
 cons = {'type': 'eq', 'fun': element_balance, 'args':[e0]}
-bnds = ((1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10,np.inf), (1e-10,np.inf), (1e-10,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
+bnds = ((1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10, np.inf), (1e-10,np.inf), (1e-10,np.inf)) # number of bounds needs to match the number of species. e.g. 2 species, 2 bounds. 
 
 result_y = np.ones((ps.shape[0], Ts.shape[0], n0.shape[0])) # what is n0?? and what dimensions is this giving.
 h2 = []
@@ -220,8 +223,9 @@ for i in range(ps.shape[0]):
         if not res.success:
             res = retry(y, res)
         
-        if np.linalg.norm(element_balance(res_o.x, e0), ord =1) <= np.linalg.norm(element_balance(res.x, e0),1): # check which equalit constraint is greater breached. 
-            y = res_o.x
+        ### Has the retried attempts achieved 'convergence'? checker.
+        if np.linalg.norm(element_balance(res_o.x, e0), ord =1) <= np.linalg.norm(element_balance(res.x, e0),1): # check which equality constraint is greater breached. 
+            y = res_o.x # original result before retry is satisfactory. 
             if not res_o.success:
                 f +=1
             else: 
@@ -229,7 +233,7 @@ for i in range(ps.shape[0]):
             s_o_f.append(res_o.success)
             
         else:
-            y = res.x
+            y = res.x 
             if not res.success:
                 f +=1
             else: 
@@ -242,9 +246,9 @@ for i in range(ps.shape[0]):
         co2.append(y[1]/np.sum(y))
         ch4.append(y[2]/np.sum(y))
         co.append(y[4]/np.sum(y))
-        c.append(y[5]/np.sum(y))
-        ch3oh.append(y[6]/np.sum(y))
-        X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
+       # c.append(y[5]/np.sum(y))
+        ch3oh.append(y[5]/np.sum(y))
+      #  X_MeOH.append( ((y[1] + y[2] + y[4] + y[5]) / N_MeOH )*100)
         
         s_o_f.append(res.success)
         
@@ -270,11 +274,11 @@ plt.plot(Tc, h2o, label = 'H$_2$O')
 plt.plot(Tc, co2, label = 'CO$_2$')
 plt.plot(Tc, co, label = 'CO')
 plt.plot(Tc, ch4, label = 'CH$_4$')
-plt.plot(Tc, c, label = 'C')
+#plt.plot(Tc, c, label = 'C')
 plt.plot(Tc, ch3oh, label = 'CH$_3$OH')
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
-plt.title('4CO$_2$:1H$_2$')
+plt.title('1CH$_3$OH:1.5H$_2$O')
 plt.legend()
 plt.show()
 
@@ -285,12 +289,12 @@ plt.plot(Tc, h2o, label='H$_2$O')
 plt.plot(Tc, co2, label='CO$_2$')
 plt.plot(Tc, co, label='CO')
 plt.plot(Tc, ch4, label='CH$_4$')
-plt.plot(Tc, c, label='C')
+#plt.plot(Tc, c, label='C')
 plt.plot(Tc, ch3oh, label='CH$_3$OH')
 
 plt.ylabel('Mole Fraction')
 plt.xlabel('Temperature (°C)')
-plt.title('4CO$_2$:1H$_2$')
+plt.title('1CH$_3$OH:1.5H$_2$O')
 
 # === ADD THIS SECTION ===
 for T, success in zip(Tc, s_o_f):
@@ -312,7 +316,7 @@ for T in Ts:
     gibbs_form = Gabs_molar(T)
     
     ch4_gibbs.append(gibbs_form[2])
-    ch3oh_gibbs.append(gibbs_form[6])
+    ch3oh_gibbs.append(gibbs_form[5])
     h2o_gibbs.append(gibbs_form[0])
     co2_gibbs.append(gibbs_form[1])
     
