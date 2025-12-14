@@ -71,7 +71,7 @@ def equilibrium_conversion(K):
         f = lambda x: 4*x**3 / ((1-x)*(1+2*x)**2) - K
         return brentq(f, 1e-8, 0.999999)
 
-T = np.linspace(300, 1000, 200)  # K
+T = np.linspace(298, 1000, 200)  # K
 x = np.array([equilibrium_conversion(Kp(Ti)) for Ti in T])
 
 plt.plot(T, x)
