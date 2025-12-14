@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 12 16:19:03 2025
+Created on Sun Dec 14 15:26:57 2025
 
-@author: jrjol
+@author: joejo
 
-Seems to be converging well at all points.
+Now, just calculating the methanol conversion for a single reaction. 
+Methanol decomp to start.
 
-TODO:
-    - Check the formula for the ratio of success v fail convergences. CHECKED and satisfactory.
-    - Methanol product mole fraction is still negligable. consider gibbs E of 
-    carbon. Issue could be due to consideration of C, yet CH4 is still moderate.
-    
-Temporarily removing carbon from the product species. No improvement or increase in methanol yield,
-hence bringing C back. 
 """
+
 
 import numpy as np
 from scipy.optimize import minimize
