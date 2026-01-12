@@ -8,6 +8,7 @@ Created on Sun Dec 14 16:40:10 2025
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq
+from scipy.optimize import brentq
 
 R = 8.314462618  # J/molK
 
@@ -47,18 +48,18 @@ def G_species(T, specie):
 
     return G_RT * R * T
 
-def deltaG_rxn(T):
+def deltaG_rxn_ch3oh_decomp(T):
     return (
         G_species(T,"CO")
         + 2*G_species(T,"H2")
         - G_species(T,"CH3OH")
     )
 
-def Kp(T):
-    return np.exp(-deltaG_rxn(T) / (R*T))
+def Kp_ch3oh_decomp(T):
+    return np.exp(-deltaG_rxn_ch3oh_decomp(T) / (R*T))
 
 
-def equilibrium_conversion(K):
+def equilibrium_conversion_ch3oh_decomp(K):
     x_test = np.linspace(1e-8, 0.999999, 1000)
     Kmax = np.max(4*x_test**3 / ((1-x_test)*(1+2*x_test)**2))
 
@@ -67,18 +68,48 @@ def equilibrium_conversion(K):
     elif K <= 0:
         return 0.0
     else:
-        from scipy.optimize import brentq
         f = lambda x: 4*x**3 / ((1-x)*(1+2*x)**2) - K
         return brentq(f, 1e-8, 0.999999)
+    
+def delG_rxn_ch3oh_smr(T):
+    return(
+        G_species(T, "CO2")
+        + 3*G_species(T, "H2")
+        -G_species(T, "CH3OH")
+        - G_species(T, "H2O")
+        )
+
+def Kp_ch3oh_smr(T):
+    return np.exp(-delG_rxn_ch3oh_smr(T)/(R*T))
+
+def equili_conv_ch3oh_smr(K):
+    x_test = np.linspace(1e-8, 0.999999, 1000)
+    Kmax = np.max((27*x_test**4)/(2*x_test)**2*(1-x_test)**2)
+    
+    if K >=Kmax:
+        return 0.99999
+    elif K <=0:
+        return 0.0
+    else:
+        f = lambda x: 4*x**3 / ((1-x)*(1+2*x)**2) - K
+        return brentq(f, 1e-8, 0.999999)
+    
 
 T = np.linspace(298, 1000, 200)  # K
-x = np.array([equilibrium_conversion(Kp(Ti)) for Ti in T])
+x_ch3oh_decomp = np.array([equilibrium_conversion_ch3oh_decomp(Kp_ch3oh_decomp(Ti)) for Ti in T])
 
-plt.plot(T, x)
+plt.plot(T, x_ch3oh_decomp*100)
 plt.xlabel("Temperature (K)")
-plt.ylabel("Equilibrium conversion of CH$_3$OH")
-plt.title("CH$_3$OH → CO + 2H$_2$ at 1 atm")
-plt.grid(True)
+plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
+plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
+plt.show()
+
+x_ch3oh_reform = np.array([equili_conv_ch3oh_smr(Kp_ch3oh_decomp(Ti)) for Ti in T])
+
+plt.plot(T, x_ch3oh_decomp*100)
+plt.xlabel("Temperature (K)")
+plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
+plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
 plt.show()
 
 
