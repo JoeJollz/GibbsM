@@ -14,14 +14,16 @@ R = 8.314462618  # J/molK
 
 def G_species(T, specie):
 
-    if specie == "H2":
-        row = 2 if T > 1000 else 3
-    elif specie == "CO":
-        row = 12 if T > 1000 else 13
-    elif specie == "CH3OH":
-        row = 6 if T > 1000 else 7
-    else:
-        raise ValueError("Unknown species")
+    # if specie == "H2":
+    #     row = 2 if T > 1000 else 3
+    # elif specie == "CO":
+    #     row = 12 if T > 1000 else 13
+    # elif specie == "CH3OH":
+    #     row = 6 if T > 1000 else 7
+    # elif specie == "CO2":
+    #     row = .... if T>1000 else ....
+    # else:
+    #     raise ValueError("Unknown species")
 
     coeff = np.array([
         [0.29328305E+01, 0.8265980E-03, -0.14640057E-06, 0.15409851E-10, -0.68879615E-15, -0.81305582E+3, -0.10243164E+1],  # H2 high
@@ -30,10 +32,14 @@ def G_species(T, specie):
         [0.35795335E+01, -0.61035369E-03, 0.10168143E-05,  0.90700586E-09, -0.90442449E-12, -0.14344086E+05, 0.35084093E+01],  # CO low
         [3.52726795E+00, 1.03178783E-02, -3.62892944E-06, 5.77448016E-10, -3.42182632E-14, -2.60028834E+04, 5.16758693E+00], # CH3OH high
         [5.65851051E+00, -1.62983419E-02, 6.91938156E-05, -7.58372926E-08, 2.80427550E-11, -2.56119736E+04, -8.97330508E-01], # CH3OH low
+        [0.46365111E+01, 0.27414569E-02, -0.99589759E-06, 0.16038666E-09, -0.91619857E-14, -0.49024904E+05, -0.19348955E+01], # CO2 High
+        [0.23568130E+01, 0.89841299E-02, -0.71220632E-05, 0.24573008E-08, -0.14288548E-12, -0.48371971E+05, 0.99009035E+01], # CO2 Low
+        [0.26770389E+01, 0.29731816E-02, -0.77376889E-06, 0.94433514E-10, -0.42689991E-14,-0.29885894E+05, 0.68825500E+01], #H2O High
+        [0.41986352E+01, -0.20364017E-02, 0.65203416E-05, -0.54879269E-08, 0.17719680E-11, -0.30293726E+05, -0.84900901E+00], #H2O Low
     ])
 
     # remap rows
-    idx = {"H2": (0,1), "CO": (2,3), "CH3OH": (4,5)}[specie]
+    idx = {"H2": (0,1), "CO": (2,3), "CH3OH": (4,5), "CO2": (6,7), "H2O": (8,9)}[specie]
     a = coeff[idx[0] if T > 1000 else idx[1]]
 
     G_RT = (
@@ -83,19 +89,18 @@ def Kp_ch3oh_smr(T):
     return np.exp(-delG_rxn_ch3oh_smr(T)/(R*T))
 
 def equili_conv_ch3oh_smr(K):
-    x_test = np.linspace(1e-8, 0.999999, 1000)
-    Kmax = np.max((27*x_test**4)/(2*x_test)**2*(1-x_test)**2)
-    
-    if K >=Kmax:
-        return 0.99999
-    elif K <=0:
+    f = lambda x: (27*x**4)/((1-x)**2*(2+2*x)**2) - K
+
+    if K <= 0:
         return 0.0
+    elif K > f(0.999999) + K:
+        return 0.999999
     else:
-        f = lambda x: 4*x**3 / ((1-x)*(1+2*x)**2) - K
         return brentq(f, 1e-8, 0.999999)
+
     
 
-T = np.linspace(298, 1000, 200)  # K
+T = np.linspace(298, 1000, 2000)  # K
 x_ch3oh_decomp = np.array([equilibrium_conversion_ch3oh_decomp(Kp_ch3oh_decomp(Ti)) for Ti in T])
 
 plt.plot(T, x_ch3oh_decomp*100)
@@ -104,12 +109,12 @@ plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
 plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
 plt.show()
 
-x_ch3oh_reform = np.array([equili_conv_ch3oh_smr(Kp_ch3oh_decomp(Ti)) for Ti in T])
+x_ch3oh_reform = np.array([equili_conv_ch3oh_smr(Kp_ch3oh_smr(Ti)) for Ti in T])
 
-plt.plot(T, x_ch3oh_decomp*100)
+plt.plot(T, x_ch3oh_reform*100)
 plt.xlabel("Temperature (K)")
 plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
-plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
+plt.title("Conversion: CH$_3$OH + H$_2$O → CO$_2$ + 3H$_2$")
 plt.show()
 
 
