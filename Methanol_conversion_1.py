@@ -3,6 +3,9 @@
 Created on Sun Dec 14 16:40:10 2025
 
 @author: joejo
+
+TODO: 
+    Add the equilibrium conversion functions for ethanol steam reforming. 
 """
 
 import numpy as np
@@ -36,10 +39,12 @@ def G_species(T, specie):
         [0.23568130E+01, 0.89841299E-02, -0.71220632E-05, 0.24573008E-08, -0.14288548E-12, -0.48371971E+05, 0.99009035E+01], # CO2 Low
         [0.26770389E+01, 0.29731816E-02, -0.77376889E-06, 0.94433514E-10, -0.42689991E-14,-0.29885894E+05, 0.68825500E+01], #H2O High
         [0.41986352E+01, -0.20364017E-02, 0.65203416E-05, -0.54879269E-08, 0.17719680E-11, -0.30293726E+05, -0.84900901E+00], #H2O Low
+        [0.65624365E+01, 0.15204222E-01, -0.53896795E-05, 0.86225011E-09, -0.51289787E-13, -0.31525621E+05,-0.94730202E+01], # C2H6O High
+        [ 0.48586957E+01, -0.37401726E-02, 0.69555378E-04, -0.88654796E-07, 0.35168835E-10, -0.29996132E+05, 0.48018545E+01], # C2H6O Low
     ])
 
     # remap rows
-    idx = {"H2": (0,1), "CO": (2,3), "CH3OH": (4,5), "CO2": (6,7), "H2O": (8,9)}[specie]
+    idx = {"H2": (0,1), "CO": (2,3), "CH3OH": (4,5), "CO2": (6,7), "H2O": (8,9), "C2H6O": (10,11)}[specie]
     a = coeff[idx[0] if T > 1000 else idx[1]]
 
     G_RT = (
@@ -54,6 +59,7 @@ def G_species(T, specie):
 
     return G_RT * R * T
 
+# ======================= METHANOL DECOMP EQUIL ===============================
 def deltaG_rxn_ch3oh_decomp(T):
     return (
         G_species(T,"CO")
@@ -77,6 +83,7 @@ def equilibrium_conversion_ch3oh_decomp(K):
         f = lambda x: 4*x**3 / ((1-x)*(1+2*x)**2) - K
         return brentq(f, 1e-8, 0.999999)
     
+# ================== METHANOL SMR EQUIL =======================================
 def delG_rxn_ch3oh_smr(T):
     return(
         G_species(T, "CO2")
@@ -97,6 +104,14 @@ def equili_conv_ch3oh_smr(K):
         return 0.999999
     else:
         return brentq(f, 1e-8, 0.999999)
+
+# ================ ETHANOL SMR EQUIL ==========================================
+
+def delG_rxn_c2h5oh_smr(T):
+    return(
+        G_species(T, "CO")
+        + G_species(T, "H")
+        )
 
     
 
