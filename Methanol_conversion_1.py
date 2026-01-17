@@ -6,6 +6,7 @@ Created on Sun Dec 14 16:40:10 2025
 
 TODO: 
     Add the equilibrium conversion functions for ethanol steam reforming. 
+    Completing plotting for ethanol steam reforming. 
 """
 
 import numpy as np
@@ -110,12 +111,27 @@ def equili_conv_ch3oh_smr(K):
 def delG_rxn_c2h5oh_smr(T):
     return(
         G_species(T, "CO")
-        + G_species(T, "H")
+        + G_species(T, "H2")
         )
 
+def Kp_c2h5oh_smr(T):
+    return np.exp(-delG_rxn_c2h5oh_smr(T)/(R*T))
+
+def equili_conv_c2h5oh_smr(K):
+    f = lambda: x 
+    
+    if K <= 0:
+        return 0.0
+    elif K > f(0.999999) + K:
+        return 0.999999
+    else:
+        return brentq(f, 1e-8, 0.999999)
     
 
+# ======================== PLOTTING ===========================================    
+
 T = np.linspace(298, 1000, 2000)  # K
+####
 x_ch3oh_decomp = np.array([equilibrium_conversion_ch3oh_decomp(Kp_ch3oh_decomp(Ti)) for Ti in T])
 
 plt.plot(T, x_ch3oh_decomp*100)
@@ -123,7 +139,7 @@ plt.xlabel("Temperature (K)")
 plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
 plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
 plt.show()
-
+####
 x_ch3oh_reform = np.array([equili_conv_ch3oh_smr(Kp_ch3oh_smr(Ti)) for Ti in T])
 
 plt.plot(T, x_ch3oh_reform*100)
@@ -131,5 +147,12 @@ plt.xlabel("Temperature (K)")
 plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
 plt.title("Conversion: CH$_3$OH + H$_2$O → CO$_2$ + 3H$_2$")
 plt.show()
+####
+x_c2h5oh_reform = np.array([equili_conv_c2h5oh_smr(Kp_c2h5oh_smr(Ti)) for Ti in T])
 
+plt.plot(T, x_ch3oh_reform*100)
+plt.xlabel("Temperature (K)")
+plt.ylabel("X$_{eq,C$_2$H$_6$OH}$", fontsize=15)
+plt.title("Conversion: C2H$_5$OH .... ->")
+plt.show()
 
