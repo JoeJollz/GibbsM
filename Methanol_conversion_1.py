@@ -5,8 +5,6 @@ Created on Sun Dec 14 16:40:10 2025
 @author: joejo
 
 TODO: 
-    Add the equilibrium conversion functions for ethanol steam reforming. 
-    Completing plotting for ethanol steam reforming. 
 """
 
 import numpy as np
@@ -110,15 +108,17 @@ def equili_conv_ch3oh_smr(K):
 
 def delG_rxn_c2h5oh_smr(T):
     return(
-        G_species(T, "CO")
-        + G_species(T, "H2")
+        2*G_species(T, "CO")
+        + 4*G_species(T, "H2")
+        -G_species(T, "C2H6O")
+        - G_species(T, "H2O")
         )
 
 def Kp_c2h5oh_smr(T):
     return np.exp(-delG_rxn_c2h5oh_smr(T)/(R*T))
 
 def equili_conv_c2h5oh_smr(K):
-    f = lambda: x 
+    f = lambda x: (1024*x**6)/((1-x)**2*(2*(1-x)+6*x)**4) - K 
     
     if K <= 0:
         return 0.0
@@ -150,9 +150,9 @@ plt.show()
 ####
 x_c2h5oh_reform = np.array([equili_conv_c2h5oh_smr(Kp_c2h5oh_smr(Ti)) for Ti in T])
 
-plt.plot(T, x_ch3oh_reform*100)
+plt.plot(T, x_c2h5oh_reform*100)
 plt.xlabel("Temperature (K)")
-plt.ylabel("X$_{eq,C$_2$H$_6$OH}$", fontsize=15)
-plt.title("Conversion: C2H$_5$OH .... ->")
+plt.ylabel("X$_{eq,C2H5OH}$", fontsize=15)
+plt.title("Conversion: C$_2$H$_5$OH +H$_2$O -> 2CO + 4H$_2$")
 plt.show()
 
