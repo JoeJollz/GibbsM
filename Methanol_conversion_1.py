@@ -133,6 +133,7 @@ def equili_conv_c2h5oh_smr(K):
 T = np.linspace(298, 1000, 2000)  # K
 ####
 x_ch3oh_decomp = np.array([equilibrium_conversion_ch3oh_decomp(Kp_ch3oh_decomp(Ti)) for Ti in T])
+delg_RT_ch3oh_decomp = np.array([deltaG_rxn_ch3oh_decomp(Ti) for Ti in T])
 
 plt.plot(T, x_ch3oh_decomp*100)
 plt.xlabel("Temperature (K)")
