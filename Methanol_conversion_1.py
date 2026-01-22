@@ -137,23 +137,35 @@ delg_RT_ch3oh_decomp = np.array([deltaG_rxn_ch3oh_decomp(Ti) for Ti in T])
 
 plt.plot(T, x_ch3oh_decomp*100)
 plt.xlabel("Temperature (K)")
-plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
+plt.ylabel("X$_{eq,CH3OH}$ (%)", fontsize=15)
 plt.title("Conversion: CH$_3$OH → CO + 2H$_2$")
 plt.show()
 ####
 x_ch3oh_reform = np.array([equili_conv_ch3oh_smr(Kp_ch3oh_smr(Ti)) for Ti in T])
+delg_RT_ch3oh_smr = np.array([delG_rxn_ch3oh_smr(Ti) for Ti in T])
+
 
 plt.plot(T, x_ch3oh_reform*100)
 plt.xlabel("Temperature (K)")
-plt.ylabel("X$_{eq,CH3OH}$", fontsize=15)
+plt.ylabel("X$_{eq,CH3OH}$ (%)", fontsize=15)
 plt.title("Conversion: CH$_3$OH + H$_2$O → CO$_2$ + 3H$_2$")
 plt.show()
 ####
 x_c2h5oh_reform = np.array([equili_conv_c2h5oh_smr(Kp_c2h5oh_smr(Ti)) for Ti in T])
+delg_RT_c2h5oh_smr = np.array([delG_rxn_c2h5oh_smr(Ti) for Ti in T])
 
 plt.plot(T, x_c2h5oh_reform*100)
 plt.xlabel("Temperature (K)")
-plt.ylabel("X$_{eq,C2H5OH}$", fontsize=15)
+plt.ylabel("X$_{eq,C2H5OH}$ (%)", fontsize=15)
 plt.title("Conversion: C$_2$H$_5$OH +H$_2$O -> 2CO + 4H$_2$")
+plt.show()
+
+plt.plot(T, delg_RT_c2h5oh_smr, label = 'C$_2$H$_5$OH + H$_2$O <> 2CO + 4H$_2$')
+plt.plot(T, delg_RT_ch3oh_decomp, label ='CH$_3$OH <> CO + 2H$_2$')
+plt.plot(T, delg_RT_ch3oh_smr,label = 'CH$_3$OH + H$_2$O <> CO$_2$ + 3H$_2$')
+plt.legend()
+plt.xlabel('Temperature (K)')
+plt.ylabel(r'$\Delta G^\circ / RT = -\ln K$')
+
 plt.show()
 
